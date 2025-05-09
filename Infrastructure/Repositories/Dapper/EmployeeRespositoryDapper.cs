@@ -5,34 +5,84 @@ using System.Text;
 using System.Threading.Tasks;
 using Domain.Entities;
 using Domain.Interfaces.Repositories;
+using Infrastructure.DataAccess.Dapper;
+using Dapper;
 
 namespace Infrastructure.Repositories
 {
     public class EmployeeRespositoryDapper : EmployeeRespository
     {
-        public override Task<Employee> Add(Employee entity)
-        {
-            throw new NotImplementedException();
+        private readonly IDbConnectionFactoryDapper _dbConnectionFactory;
+
+        public EmployeeRespositoryDapper(IDbConnectionFactoryDapper dbConnectionFactory) 
+        { 
+            _dbConnectionFactory = dbConnectionFactory;
         }
 
-        public override Task<bool> Delete(int id)
+        public override async Task<Employee> Add(Employee entity)
         {
-            throw new NotImplementedException();
+            entity.CreationDate = DateTime.UtcNow;
+            entity.ModifiedDate = DateTime.UtcNow;
+
+            using (var connection = _dbConnectionFactory.CreateConnection())
+            {
+                var sql =
+                    @"INSERT INTO Employees (NAME, EMAIL, DEPARTMENT, CREATION_DATE, MODIFICATION_DATE) 
+                            VALUES (@Name, @Email, @Department, @CreationDate, @ModificationDate);
+                            SELECT last_insert_rowid();";
+
+                entity.Id = await connection.ExecuteScalarAsync<int>(sql, new { entity.Name, entity.Email, entity.Department, entity.CreationDate, entity.ModifiedDate });
+            }
+
+            return entity;
         }
 
-        public override Task<IEnumerable<Employee>> GetAll()
+        public async override Task<bool> Delete(int id)
         {
-            throw new NotImplementedException();
+            using (var connection = _dbConnectionFactory.CreateConnection())
+            {
+                var sql = "DELETE FROM EMPLOYEE WHERE ID = @Id";
+
+                var result = connection.ExecuteAsync(sql, new { Id = id });
+
+                return await result > 0;
+            }
         }
 
-        public override Task<Employee> GetById(int id)
+        public async override Task<IEnumerable<Employee>> GetAll()
         {
-            throw new NotImplementedException();
+            using (var connection = _dbConnectionFactory.CreateConnection())
+            {
+                var sql = "SELECT * FROM EMPLOYEE";
+
+                return await connection.QueryAsync<Employee>(sql);
+            }
         }
 
-        public override Task<Employee> Update(Employee entity)
+        public async override Task<Employee> GetById(int id)
         {
-            throw new NotImplementedException();
+            using (var connection = _dbConnectionFactory.CreateConnection())
+            {
+                var sql = "SELECT * FROM EMPLOYEE WHERE ID = @Id";
+                
+                return await connection.QuerySingleOrDefaultAsync<Employee>(sql, new { Id = id });
+            }
+        }
+
+        public async override Task<Employee> Update(Employee entity)
+        {
+            entity.ModifiedDate = DateTime.UtcNow;
+
+            using (var connection = _dbConnectionFactory.CreateConnection())
+            {
+                var sql = @"UPDATE EMPLOYEE 
+                            SET NAME = @Name, EMAIL = @Email, DEPARTMENT = @Department, MODIFICATION_DATE = @ModificationDate
+                            WHERE ID = @Id";
+
+                var result = await connection.ExecuteAsync(sql, new { entity.Name, entity.Email, entity.Department, entity.ModifiedDate, entity.Id });
+                
+                return entity;
+            }
         }
     }
 }
