@@ -7,9 +7,22 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <Folder Include="DataAccess\AdoNet\" />
-    <Folder Include="DataAccess\Dapper\" />
+    <PackageReference Include="Microsoft.Data.Sqlite" Version="9.0.4" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\Domain\Domain.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
     <Folder Include="DataAccess\EntityFramework\" />
+    <Folder Include="Database\" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <None Update="Database\database.db">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
   </ItemGroup>
 
 </Project>
