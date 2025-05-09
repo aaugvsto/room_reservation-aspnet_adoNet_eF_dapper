@@ -6,22 +6,21 @@ using System.Threading.Tasks;
 using Domain.Entities;
 using Domain.Interfaces.Repositories;
 using Infrastructure.DataAccess.EntityFramework;
-using Infrastructure.Repositories.Base;
 using Microsoft.EntityFrameworkCore;
 
 namespace Infrastructure.Repositories
 {
-    public class RoomRepositoryEF : RoomRepository
+    public class EmployeeRepositoryEF : EmployeeRespository
     {
-        private DbSet<Room> DbSet { get { return _context.Set<Room>(); } }
+        private DbSet<Employee> DbSet { get { return _context.Set<Employee>(); } }
         private readonly DBContext _context;
 
-        public RoomRepositoryEF(DBContext dbContext)
+        public EmployeeRepositoryEF(DBContext dbContext)
         {
             _context = dbContext;
         }
 
-        public async override Task<Room> Add(Room entity)
+        public async override Task<Employee> Add(Employee entity)
         {
             entity.CreationDate = DateTime.Now;
             entity.ModifiedDate = DateTime.Now;
@@ -43,17 +42,17 @@ namespace Infrastructure.Repositories
             return true;
         }
 
-        public async override Task<IEnumerable<Room>> GetAll()
+        public async override Task<IEnumerable<Employee>> GetAll()
         {
             return await this.DbSet.ToListAsync();
         }
 
-        public async override Task<Room> GetById(int id)
+        public async override Task<Employee> GetById(int id)
         {
             return await DbSet.FindAsync(id);
         }
 
-        public async override Task<Room> Update(Room entity)
+        public async override Task<Employee> Update(Employee entity)
         {
             entity.ModifiedDate = DateTime.Now;
 

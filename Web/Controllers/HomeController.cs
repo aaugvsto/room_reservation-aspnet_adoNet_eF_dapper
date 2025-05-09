@@ -1,4 +1,5 @@
 using System.Diagnostics;
+using Domain.Interfaces.Services;
 using Microsoft.AspNetCore.Mvc;
 using Web.Models;
 
@@ -6,15 +7,16 @@ namespace Web.Controllers
 {
     public class HomeController : Controller
     {
-        private readonly ILogger<HomeController> _logger;
+        private readonly IEmployeeService _employeeService;
 
-        public HomeController(ILogger<HomeController> logger)
+        public HomeController(IEmployeeService employeeService)
         {
-            _logger = logger;
+            _employeeService = employeeService;
         }
 
-        public IActionResult Index()
+        public async Task<IActionResult> Index()
         {
+            var itens = await _employeeService.GetAllAsync();
             return View();
         }
 
