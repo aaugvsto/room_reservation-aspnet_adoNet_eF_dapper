@@ -61,8 +61,6 @@ namespace Infrastructure.Repositories
                 var id = (long)await command.ExecuteScalarAsync();
 
                 entity.Id = (int)id;
-                entity.CreationDate = DateTime.UtcNow;
-                entity.ModifiedDate = DateTime.UtcNow;
 
                 return entity;
             }
@@ -177,7 +175,9 @@ namespace Infrastructure.Repositories
 
         public override async Task<Employee> Update(Employee entity)
         {
-            using(var dbCon = _dbConnection.CreateConnection())
+            entity.ModifiedDate = DateTime.UtcNow;
+
+            using (var dbCon = _dbConnection.CreateConnection())
             {
                 dbCon.Open();
                 var command = dbCon.CreateCommand();
@@ -195,10 +195,11 @@ namespace Infrastructure.Repositories
                 command.Parameters.Add(new SqliteParameter("@name", entity.Name));
                 command.Parameters.Add(new SqliteParameter("@email", entity.Email));
                 command.Parameters.Add(new SqliteParameter("@department", entity.Department.ToString()));
-                command.Parameters.Add(new SqliteParameter("@modificationDate", DateTime.UtcNow));
+                command.Parameters.Add(new SqliteParameter("@modificationDate", entity.ModifiedDate));
                 command.Parameters.Add(new SqliteParameter("@id", entity.Id));
 
                 await command.ExecuteNonQueryAsync();
+
                 return entity;
             }
         }

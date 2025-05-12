@@ -1,9 +1,5 @@
 using Web.Config;
 
-
-Console.WriteLine("Selecione: ");
-var db =Console.ReadLine();
-
 var builder = WebApplication.CreateBuilder(args);
 
 builder.Services.AddApplicationServices();
