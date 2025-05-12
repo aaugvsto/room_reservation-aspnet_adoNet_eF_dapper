@@ -16,8 +16,7 @@ namespace Web.Controllers
 
         public async Task<IActionResult> Index()
         {
-            var itens = await _employeeService.GetAllAsync();
-            return View();
+            return RedirectToAction("Index", "Employee");
         }
 
         public IActionResult Privacy()
