@@ -4,7 +4,6 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using Domain.Entities;
-using Domain.Interfaces.Repositories;
 using Infrastructure.DataAccess.Dapper;
 using Dapper;
 
@@ -27,7 +26,7 @@ namespace Infrastructure.Repositories
             using (var connection = _dbConnectionFactory.CreateConnection())
             {
                 var sql =
-                    @"INSERT INTO Employees (NAME, EMAIL, DEPARTMENT, CREATION_DATE, MODIFICATION_DATE) 
+                    @"INSERT INTO EMPLOYEE (NAME, EMAIL, DEPARTMENT, CREATION_DATE, MODIFICATION_DATE) 
                             VALUES (@Name, @Email, @Department, @CreationDate, @ModificationDate);
                             SELECT last_insert_rowid();";
 
@@ -53,7 +52,7 @@ namespace Infrastructure.Repositories
         {
             using (var connection = _dbConnectionFactory.CreateConnection())
             {
-                var sql = "SELECT * FROM EMPLOYEE";
+                var sql = "SELECT ID,NAME,EMAIL,DEPARTMENT,CREATION_DATE,MODIFICATION_DATE FROM EMPLOYEE";
 
                 return await connection.QueryAsync<Employee>(sql);
             }
@@ -63,7 +62,7 @@ namespace Infrastructure.Repositories
         {
             using (var connection = _dbConnectionFactory.CreateConnection())
             {
-                var sql = "SELECT * FROM EMPLOYEE WHERE ID = @Id";
+                var sql = "SELECT ID,NAME,EMAIL,DEPARTMENT,CREATION_DATE,MODIFICATION_DATE FROM EMPLOYEE WHERE ID = @Id";
                 
                 return await connection.QuerySingleOrDefaultAsync<Employee>(sql, new { Id = id });
             }
