@@ -95,13 +95,23 @@ namespace Infrastructure.Repositories
                 command.CommandText =
                     @"
                         SELECT
-                            ID,
-                            ID_EMPLOYEE,
-                            ID_ROOM,
-                            CREATION_DATE,
-                            MODIFICATION_DATE
+                            R.ID,
+                            R.ID_EMPLOYEE,
+                            R.ID_ROOM,
+                            R.CREATION_DATE,
+                            R.MODIFICATION_DATE,
+                            E.NAME,
+                            E.EMAIL,
+                            E.DEPARTMENT,
+                            RR.NAME,
+                            RR.CAPACITY,
+                            RR.LOCATION
                         FROM 
-                            RESERVATION
+                            RESERVATION R
+                        LEFT JOIN
+                            EMPLOYEE E ON R.ID_EMPLOYEE = E.ID
+                        LEFT JOIN
+                            ROOM RR ON R.ID_ROOM = RR.ID   
                     ";
 
                 using (var reader = await command.ExecuteReaderAsync())
@@ -115,6 +125,18 @@ namespace Infrastructure.Repositories
                             RoomId = reader.GetInt32(2),
                             CreationDate = DateTime.Parse(reader.GetString(3)),
                             ModifiedDate = DateTime.Parse(reader.GetString(4)),
+                            Employee = new Employee
+                            {
+                                Name = reader.GetString(5),
+                                Email = reader.GetString(6),
+                                Department = Enum.Parse<Department>(reader.GetString(7)),
+                            },
+                            Room = new Room
+                            {
+                                Name = reader.GetString(8),
+                                Capacity = reader.GetInt32(9),
+                                Location = Enum.Parse<Location>(reader.GetString(10)),
+                            }
                         };
 
                         Reservations.Add(reservation);
@@ -138,14 +160,23 @@ namespace Infrastructure.Repositories
                 command.CommandText =
                     @"
                         SELECT
-                            ID,
-                            NAME,
-                            CAPACITY,
-                            LOCATION,
-                            CREATION_DATE,
-                            MODIFICATION_DATE
+                            R.ID,
+                            R.ID_EMPLOYEE,
+                            R.ID_ROOM,
+                            R.CREATION_DATE,
+                            R.MODIFICATION_DATE,
+                            E.NAME,
+                            E.EMAIL,
+                            E.DEPARTMENT,
+                            RR.NAME,
+                            RR.CAPACITY,
+                            RR.LOCATION
                         FROM 
-                            RESERVATION
+                            RESERVATION R
+                        LEFT JOIN
+                            EMPLOYEE E ON R.ID_EMPLOYEE = E.ID
+                        LEFT JOIN
+                            ROOM RR ON R.ID_ROOM = RR.ID
                         WHERE ID = @id
                     ";
 
@@ -155,13 +186,27 @@ namespace Infrastructure.Repositories
                 {
                     while (await reader.ReadAsync())
                     {
+                        var date = reader.GetString(3);
+
                         reservation = new Reservation
                         {
                             Id = reader.GetInt32(0),
                             EmployeeId = reader.GetInt32(1),
                             RoomId = reader.GetInt32(2),
-                            CreationDate = DateTime.Parse(reader.GetString(4)),
-                            ModifiedDate = DateTime.Parse(reader.GetString(5)),
+                            CreationDate = DateTime.Parse(reader.GetString(3)),
+                            ModifiedDate = DateTime.Parse(reader.GetString(4)),
+                            Employee = new Employee
+                            {
+                                Name = reader.GetString(5),
+                                Email = reader.GetString(6),
+                                Department = Enum.Parse<Department>(reader.GetString(7)),
+                            },
+                            Room = new Room
+                            {
+                                Name = reader.GetString(8),
+                                Capacity = reader.GetInt32(9),
+                                Location = Enum.Parse<Location>(reader.GetString(10)),
+                            }
                         };
                     }
                 }
