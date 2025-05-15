@@ -186,8 +186,6 @@ namespace Infrastructure.Repositories
                 {
                     while (await reader.ReadAsync())
                     {
-                        var date = reader.GetString(3);
-
                         reservation = new Reservation
                         {
                             Id = reader.GetInt32(0),

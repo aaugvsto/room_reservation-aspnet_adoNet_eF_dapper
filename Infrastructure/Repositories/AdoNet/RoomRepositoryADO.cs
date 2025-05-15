@@ -87,7 +87,7 @@ namespace Infrastructure.Repositories
 
         public async override Task<IEnumerable<Room>> GetAll()
         {
-            var rooms = new List<Room>();
+            Dictionary<int, Room> rooms = new Dictionary<int, Room>();
 
             using (var dbCon = _dbConnection.CreateConnection())
             {
@@ -98,41 +98,62 @@ namespace Infrastructure.Repositories
                 command.CommandText =
                     @"
                         SELECT
-                            ID,
-                            NAME,
-                            CAPACITY,
-                            LOCATION,
-                            CREATION_DATE,
-                            MODIFICATION_DATE
+                            R.ID,
+                            R.NAME,
+                            R.CAPACITY,
+                            R.LOCATION,
+                            R.CREATION_DATE,
+                            R.MODIFICATION_DATE,
+                            RR.ID,
+                            RR.ID_EMPLOYEE,
+                            RR.CREATION_DATE,
+                            RR.MODIFICATION_DATE
                         FROM 
-                            ROOM
+                            ROOM R
+                        LEFT JOIN 
+                            RESERVATION RR ON R.ID = RR.ID_ROOM
                     ";
 
                 using (var reader = await command.ExecuteReaderAsync())
                 {
                     while (await reader.ReadAsync())
                     {
-                        var room = new Room
+                        var idRoom = reader.GetInt32(0);
+                        if (!rooms.ContainsKey(idRoom))
                         {
-                            Id = reader.GetInt32(0),
-                            Name = reader.GetString(1),
-                            Capacity = reader.GetInt32(2),
-                            Location = Enum.Parse<Location>(reader.GetString(3)),
-                            CreationDate = DateTime.Parse(reader.GetString(4)),
-                            ModifiedDate = DateTime.Parse(reader.GetString(5)),
-                        };
+                            rooms.Add(idRoom, new Room
+                            {
+                                Id = reader.GetInt32(0),
+                                Name = reader.GetString(1),
+                                Capacity = reader.GetInt32(2),
+                                Location = Enum.Parse<Location>(reader.GetString(3)),
+                                CreationDate = DateTime.Parse(reader.GetString(4)),
+                                ModifiedDate = DateTime.Parse(reader.GetString(5))
+                            });
+                        }
 
-                        rooms.Add(room);
+                        if (!reader.IsDBNull(6))
+                        {
+                            var reservation = new Reservation{
+                                Id = reader.GetInt32(6),
+                                RoomId = idRoom,
+                                EmployeeId = reader.GetInt32(7),
+                                CreationDate = DateTime.Parse(reader.GetString(8)),
+                                ModifiedDate = DateTime.Parse(reader.GetString(9))
+                            };
+
+                            rooms[idRoom].Reservations.Add(reservation);
+                        }
                     }
                 }
             }
 
-            return rooms;
+            return rooms.Values;
         }
 
         public async override Task<Room> GetById(int id)
         {
-            var room = new Room();
+            Room? room = null;
 
             using (var dbCon = _dbConnection.CreateConnection())
             {
@@ -143,14 +164,20 @@ namespace Infrastructure.Repositories
                 command.CommandText =
                     @"
                         SELECT
-                            ID,
-                            NAME,
-                            CAPACITY,
-                            LOCATION,
-                            CREATION_DATE,
-                            MODIFICATION_DATE
+                            R.ID,
+                            R.NAME,
+                            R.CAPACITY,
+                            R.LOCATION,
+                            R.CREATION_DATE,
+                            R.MODIFICATION_DATE,
+                            RR.ID,
+                            RR.ID_EMPLOYEE,
+                            RR.CREATION_DATE,
+                            RR.MODIFICATION_DATE
                         FROM 
-                            ROOM
+                            ROOM R
+                        LEFT JOIN 
+                            RESERVATION RR ON R.ID = RR.ID_ROOM
                         WHERE ID = @id
                     ";
 
@@ -160,15 +187,32 @@ namespace Infrastructure.Repositories
                 {
                     while (await reader.ReadAsync())
                     {
-                        room = new Room
+                        if (room is null)
                         {
-                            Id = reader.GetInt32(0),
-                            Name = reader.GetString(1),
-                            Capacity = reader.GetInt32(2),
-                            Location = Enum.Parse<Location>(reader.GetString(3)),
-                            CreationDate = DateTime.Parse(reader.GetString(4)),
-                            ModifiedDate = DateTime.Parse(reader.GetString(5)),
-                        };
+                            room = new Room
+                            {
+                                Id = reader.GetInt32(0),
+                                Name = reader.GetString(1),
+                                Capacity = reader.GetInt32(2),
+                                Location = Enum.Parse<Location>(reader.GetString(3)),
+                                CreationDate = DateTime.Parse(reader.GetString(4)),
+                                ModifiedDate = DateTime.Parse(reader.GetString(5)),
+                            };
+                        }
+
+                        if (!reader.IsDBNull(6))
+                        {
+                            var reservation = new Reservation
+                            {
+                                Id = reader.GetInt32(6),
+                                RoomId = id,
+                                EmployeeId = reader.GetInt32(7),
+                                CreationDate = DateTime.Parse(reader.GetString(8)),
+                                ModifiedDate = DateTime.Parse(reader.GetString(9))
+                            };
+
+                            room.Reservations.Add(reservation);
+                        }
                     }
                 }
 
