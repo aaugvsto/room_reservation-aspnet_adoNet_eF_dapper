@@ -10,8 +10,15 @@ namespace Domain.Entities
 {
     public class Employee : Entity
     {
+        public Employee()
+        {
+            Reservations = new List<Reservation>();
+        }
+
         public string Name { get; set; }
         public string Email { get; set; }
         public Department Department { get; set; }
+
+        public virtual ICollection<Reservation> Reservations { get; set; }
     }
 }

@@ -8,6 +8,7 @@ using Domain.Entities;
 using Domain.Enums;
 using Domain.Interfaces.Repositories;
 using Infrastructure.DataAccess.ADONET;
+using Infrastructure.DataAccess.EntityFramework.Mapping;
 using Microsoft.Data.Sqlite;
 
 namespace Infrastructure.Repositories
@@ -84,7 +85,7 @@ namespace Infrastructure.Repositories
 
         public async override Task<IEnumerable<Employee>> GetAll()
         {
-            var employees = new List<Employee>();
+            Dictionary<int, Employee> employeeMap = new Dictionary<int, Employee>();
 
             using (var dbCon = _dbConnection.CreateConnection())
             {
@@ -95,41 +96,83 @@ namespace Infrastructure.Repositories
                 command.CommandText =
                     @"
                         SELECT
-                            ID,
-                            NAME,
-                            EMAIL,
-                            DEPARTMENT,
-                            CREATION_DATE,
-                            MODIFICATION_DATE
+                            E.ID,
+                            E.NAME,
+                            E.EMAIL,
+                            E.DEPARTMENT,
+                            E.CREATION_DATE,
+                            E.MODIFICATION_DATE,
+                            R.ID, 
+                            R.ID_ROOM,
+                            R.CREATION_DATE,
+                            R.MODIFICATION_DATE,
+                            RR.ID,
+                            RR.NAME,    
+                            RR.CAPACITY,
+                            RR.LOCATION,
+                            RR.CREATION_DATE,
+                            RR.MODIFICATION_DATE
                         FROM 
-                            EMPLOYEE
+                            EMPLOYEE E
+                        LEFT JOIN
+                            RESERVATION R ON R.ID_EMPLOYEE = E.ID
+                        LEFT JOIN
+                            ROOM RR ON RR.ID = R.ID_ROOM   
                     ";
 
                 using (var reader = await command.ExecuteReaderAsync())
                 {
                     while (await reader.ReadAsync())
                     {
-                        var employee = new Employee
-                        {
-                            Id = reader.GetInt32(0),
-                            Name = reader.GetString(1),
-                            Email = reader.GetString(2),
-                            Department = Enum.Parse<Department>(reader.GetString(3)),
-                            CreationDate = reader.GetDateTime(4),
-                            ModifiedDate = reader.GetDateTime(5),
-                        };
+                        var employeeId = reader.GetInt32(0);
 
-                        employees.Add(employee);
+                        if (!employeeMap.ContainsKey(employeeId))
+                        {
+                            employeeMap.Add(employeeId, new Employee
+                            {
+                                Id = employeeId,
+                                Name = reader.GetString(1),
+                                Email = reader.GetString(2),
+                                Department = Enum.Parse<Department>(reader.GetString(3)),
+                                CreationDate = reader.GetDateTime(4),
+                                ModifiedDate = reader.GetDateTime(5),
+                            });
+                        }
+
+                        if (!reader.IsDBNull(6))
+                        {
+                            var reservation = new Reservation
+                            {
+                                Id = reader.GetInt32(6),
+                                EmployeeId = employeeId,
+                                RoomId = reader.GetInt32(7),
+                                CreationDate = reader.GetDateTime(8),
+                                ModifiedDate = reader.GetDateTime(9),
+                                Room = new Room
+                                {
+                                    Id = reader.GetInt32(10),
+                                    Name = reader.GetString(11),
+                                    Capacity = reader.GetInt32(12),
+                                    Location = Enum.Parse<Location>(reader.GetString(13)),
+                                    CreationDate = reader.GetDateTime(14),
+                                    ModifiedDate = reader.GetDateTime(15),
+                                },
+                            };
+
+                            employeeMap[employeeId]
+                                .Reservations
+                                .Add(reservation);
+                        }
                     }
                 }
             }
 
-            return employees;
+            return employeeMap.Values;
         }
 
         public override async Task<Employee> GetById(int id)
         {
-            var employee = new Employee();
+            Employee? employee = null;
 
             using (var dbCon = _dbConnection.CreateConnection())
             {
@@ -140,15 +183,29 @@ namespace Infrastructure.Repositories
                 command.CommandText =
                     @"
                         SELECT
-                            ID,
-                            NAME,
-                            EMAIL,
-                            DEPARTMENT,
-                            CREATION_DATE,
-                            MODIFICATION_DATE
+                            E.ID,
+                            E.NAME,
+                            E.EMAIL,
+                            E.DEPARTMENT,
+                            E.CREATION_DATE,
+                            E.MODIFICATION_DATE,
+                            R.ID, 
+                            R.ID_ROOM,
+                            R.CREATION_DATE,
+                            R.MODIFICATION_DATE,
+                            RR.ID,
+                            RR.NAME,    
+                            RR.CAPACITY,
+                            RR.LOCATION,
+                            RR.CREATION_DATE,
+                            RR.MODIFICATION_DATE
                         FROM 
-                            EMPLOYEE
-                        WHERE ID = @id
+                            EMPLOYEE E
+                        LEFT JOIN
+                            RESERVATION R ON R.ID_EMPLOYEE = E.ID
+                        LEFT JOIN
+                            ROOM RR ON RR.ID = R.ID_ROOM 
+                        WHERE E.ID = @id
                     ";
 
                 command.Parameters.Add(new SqliteParameter("@id", id));
@@ -157,15 +214,41 @@ namespace Infrastructure.Repositories
                 {
                     while (await reader.ReadAsync())
                     {
-                        employee = new Employee
+                        if(employee is null)
                         {
-                            Id = reader.GetInt32(0),
-                            Name = reader.GetString(1),
-                            Email = reader.GetString(2),
-                            Department = Enum.Parse<Department>(reader.GetString(3)),
-                            CreationDate = reader.GetDateTime(4),
-                            ModifiedDate = reader.GetDateTime(5),
-                        };
+                            employee = new Employee
+                            {
+                                Id = reader.GetInt32(0),
+                                Name = reader.GetString(1),
+                                Email = reader.GetString(2),
+                                Department = Enum.Parse<Department>(reader.GetString(3)),
+                                CreationDate = reader.GetDateTime(4),
+                                ModifiedDate = reader.GetDateTime(5),
+                            };
+                        }
+
+                        if(employee is Employee && !reader.IsDBNull(6))
+                        {
+                            var reservation = new Reservation
+                            {
+                                Id = reader.GetInt32(6),
+                                EmployeeId = employee.Id,
+                                RoomId = reader.GetInt32(7),
+                                CreationDate = reader.GetDateTime(8),
+                                ModifiedDate = reader.GetDateTime(9),
+                                Room = new Room
+                                {
+                                    Id = reader.GetInt32(10),
+                                    Name = reader.GetString(11),
+                                    Capacity = reader.GetInt32(12),
+                                    Location = Enum.Parse<Location>(reader.GetString(13)),
+                                    CreationDate = reader.GetDateTime(14),
+                                    ModifiedDate = reader.GetDateTime(15),
+                                },
+                            };
+
+                            employee.Reservations.Add(reservation);
+                        }
                     }
                 }
 

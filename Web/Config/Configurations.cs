@@ -21,8 +21,8 @@ namespace Web.Config
             //Choose the repository implementation
 
             //services.UseEfRepositories();
-            //services.UseAdoNetRepositories();
-            services.UseDapperRepositories();
+            services.UseAdoNetRepositories();
+            //services.UseDapperRepositories();
 
             // Register application services
             services.AddScoped<IEmployeeService, EmployeeService>();
